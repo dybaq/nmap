@@ -1,0 +1,1864 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nmap Scanner — Công cụ quét mạng</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f0f4f8;
+  --white: #ffffff;
+  --card: #ffffff;
+  --border: #e2e8f0;
+  --border2: #cbd5e1;
+  --text: #1e293b;
+  --text2: #475569;
+  --text3: #94a3b8;
+  --blue: #2563eb;
+  --blue-light: #eff6ff;
+  --blue-dark: #1d4ed8;
+  --green: #16a34a;
+  --green-light: #f0fdf4;
+  --red: #dc2626;
+  --red-light: #fef2f2;
+  --orange: #ea580c;
+  --orange-light: #fff7ed;
+  --yellow: #ca8a04;
+  --purple: #7c3aed;
+  --purple-light: #f5f3ff;
+  --teal: #0d9488;
+  --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,.08), 0 2px 4px -2px rgba(0,0,0,.04);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,.08), 0 4px 6px -4px rgba(0,0,0,.04);
+  --radius: 10px;
+  --radius-sm: 6px;
+}
+
+body {
+  font-family: 'Be Vietnam Pro', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ── HEADER ───────────────────────────────────── */
+.header {
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 56px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow);
+}
+
+.header-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.header-logo .icon {
+  width: 32px; height: 32px;
+  background: linear-gradient(135deg, var(--blue), var(--purple));
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 16px;
+}
+
+.header-sep { flex: 1; }
+
+.header-badge {
+  padding: 4px 10px;
+  background: var(--green-light);
+  color: var(--green);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex; align-items: center; gap: 5px;
+}
+
+.dot-green {
+  width: 6px; height: 6px;
+  background: var(--green);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .5; transform: scale(.8); }
+}
+
+/* ── LAYOUT ───────────────────────────────────── */
+.layout {
+  display: grid;
+  grid-template-columns: 420px 1fr;
+  gap: 0;
+  min-height: calc(100vh - 56px);
+}
+
+/* ── LEFT SIDEBAR ─────────────────────────────── */
+.sidebar {
+  background: var(--white);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+/* ── CARD ─────────────────────────────────────── */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.card-head {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg);
+}
+
+.card-head-icon {
+  width: 28px; height: 28px;
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+}
+
+.card-head-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.card-body { padding: 14px 16px; }
+
+/* ── PRESET CARDS ─────────────────────────────── */
+.preset-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 12px;
+}
+
+.preset-item {
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  cursor: pointer;
+  transition: all .18s;
+  background: var(--white);
+  position: relative;
+  overflow: hidden;
+}
+
+.preset-item::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  opacity: 0;
+  transition: opacity .18s;
+}
+
+.preset-item:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.preset-item.active { border-color: currentColor; box-shadow: var(--shadow-md); }
+.preset-item.active::before { opacity: 1; }
+
+.preset-quick::before { background: var(--blue); }
+.preset-full::before  { background: var(--purple); }
+.preset-vuln::before  { background: var(--red); }
+.preset-all::before   { background: var(--orange); }
+
+.preset-quick.active  { color: var(--blue); background: var(--blue-light); }
+.preset-full.active   { color: var(--purple); background: var(--purple-light); }
+.preset-vuln.active   { color: var(--red); background: var(--red-light); }
+.preset-all.active    { color: var(--orange); background: var(--orange-light); }
+
+.preset-icon { font-size: 20px; margin-bottom: 6px; }
+.preset-name { font-weight: 700; font-size: 13px; margin-bottom: 3px; }
+.preset-desc { font-size: 11px; color: var(--text3); line-height: 1.4; }
+.preset-cmd  { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text3); margin-top: 5px; }
+
+/* ── FORM ELEMENTS ────────────────────────────── */
+.form-row { margin-bottom: 12px; }
+.form-row:last-child { margin-bottom: 0; }
+
+label.field-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text2);
+  margin-bottom: 5px;
+}
+
+.input-wrap { position: relative; }
+
+.input-wrap .input-icon {
+  position: absolute; left: 10px; top: 50%;
+  transform: translateY(-50%);
+  color: var(--text3); font-size: 14px;
+  pointer-events: none;
+}
+
+input[type=text], select, textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--white);
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+
+input[type=text]:focus, select:focus, textarea:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(37,99,235,.1);
+}
+
+input.has-icon { padding-left: 32px; }
+
+select {
+  cursor: pointer;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 32px;
+}
+
+textarea { resize: vertical; min-height: 56px; font-size: 13px; }
+
+/* Checkbox group */
+.check-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.check-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text2);
+  transition: all .15s;
+  user-select: none;
+}
+
+.check-label:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-light); }
+.check-label input { accent-color: var(--blue); width: 14px; height: 14px; }
+.check-label input:checked ~ span { color: var(--blue); }
+
+/* ── TIMING SLIDER ────────────────────────────── */
+.timing-track {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.timing-btn {
+  padding: 8px 4px;
+  text-align: center;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text2);
+  transition: all .15s;
+  background: var(--white);
+}
+
+.timing-btn:hover { border-color: var(--blue); color: var(--blue); }
+.timing-btn.active { background: var(--blue); border-color: var(--blue); color: white; }
+
+.timing-label {
+  font-size: 10px;
+  color: var(--text3);
+  font-weight: 400;
+  display: block;
+  margin-top: 2px;
+}
+
+/* ── COMMAND PREVIEW ──────────────────────────── */
+.cmd-box {
+  background: #0f172a;
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: #7dd3fc;
+  word-break: break-all;
+  line-height: 1.6;
+  position: relative;
+  min-height: 38px;
+}
+
+.cmd-box .prompt {
+  color: #4ade80;
+  user-select: none;
+}
+
+/* ── SCAN BUTTON ──────────────────────────────── */
+.btn-scan {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, var(--blue), var(--blue-dark));
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .18s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(37,99,235,.3);
+}
+
+.btn-scan:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(37,99,235,.4); }
+.btn-scan:active { transform: translateY(0); }
+.btn-scan:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+.btn-stop {
+  width: 100%;
+  padding: 10px;
+  background: var(--red-light);
+  color: var(--red);
+  border: 1.5px solid var(--red);
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.btn-stop:hover { background: var(--red); color: white; }
+
+.btn-reset {
+  width: 100%;
+  padding: 8px;
+  background: var(--white);
+  color: var(--text2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .15s;
+}
+
+.btn-reset:hover { border-color: var(--border2); color: var(--text); }
+
+/* ── RIGHT PANEL ──────────────────────────────── */
+.main-panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── OUTPUT TABS ──────────────────────────────── */
+.output-tabs {
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 0;
+  padding: 0 20px;
+}
+
+.out-tab {
+  padding: 14px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text3);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all .15s;
+  white-space: nowrap;
+}
+
+.out-tab:hover { color: var(--text2); }
+.out-tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+
+/* ── SCAN STATUS BAR ──────────────────────────── */
+.status-bar {
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text2);
+}
+
+.stat-item strong { color: var(--text); font-size: 13px; }
+
+.stat-sep { flex: 1; }
+
+.progress-wrap {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 200px;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--blue), var(--purple));
+  border-radius: 2px;
+  width: 0%;
+  transition: width .3s;
+}
+
+.progress-fill.ani {
+  animation: slide 1.2s ease-in-out infinite;
+  width: 40%;
+}
+
+@keyframes slide {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(350%); }
+}
+
+/* ── CONTENT AREA ─────────────────────────────── */
+.content-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.content-area::-webkit-scrollbar { width: 6px; }
+.content-area::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+.view { display: none; }
+.view.active { display: block; }
+
+/* ── EMPTY STATE ──────────────────────────────── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  gap: 12px;
+  color: var(--text3);
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 56px;
+  opacity: .4;
+}
+
+.empty-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text2);
+}
+
+.empty-sub {
+  font-size: 13px;
+  max-width: 300px;
+}
+
+/* ── SUMMARY STRIP ────────────────────────────── */
+.summary-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.sum-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  text-align: center;
+}
+
+.sum-val {
+  font-size: 28px;
+  font-weight: 700;
+  display: block;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.sum-lbl {
+  font-size: 11px;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  font-weight: 600;
+}
+
+.sum-blue  .sum-val { color: var(--blue); }
+.sum-green .sum-val { color: var(--green); }
+.sum-red   .sum-val { color: var(--red); }
+.sum-purple .sum-val { color: var(--purple); }
+
+/* ── HOST CARD ────────────────────────────────── */
+.host-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+  overflow: hidden;
+  transition: box-shadow .15s;
+}
+
+.host-card:hover { box-shadow: var(--shadow-md); }
+
+.host-header {
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+  border-bottom: 1px solid transparent;
+  transition: background .15s, border-color .15s;
+}
+
+.host-header:hover { background: var(--bg); }
+.host-header.open { border-bottom-color: var(--border); }
+
+.host-avatar {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  background: var(--blue-light);
+  flex-shrink: 0;
+}
+
+.host-info { flex: 1; min-width: 0; }
+.host-ip { font-weight: 700; font-size: 15px; font-family: 'JetBrains Mono', monospace; }
+.host-sub { font-size: 12px; color: var(--text3); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.host-badges { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+
+.badge {
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid;
+}
+
+.badge-up    { background: var(--green-light); color: var(--green); border-color: #86efac; }
+.badge-down  { background: var(--red-light); color: var(--red); border-color: #fca5a5; }
+.badge-open  { background: var(--green-light); color: var(--green); border-color: #86efac; }
+.badge-filt  { background: #fffbeb; color: var(--yellow); border-color: #fde68a; }
+.badge-os    { background: var(--purple-light); color: var(--purple); border-color: #c4b5fd; }
+
+.collapse-arrow {
+  color: var(--text3);
+  font-size: 16px;
+  transition: transform .2s;
+  flex-shrink: 0;
+}
+
+.collapse-arrow.open { transform: rotate(180deg); }
+
+.host-body { padding: 16px; }
+
+/* ── PORT TABLE ───────────────────────────────── */
+.port-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.port-table thead th {
+  text-align: left;
+  padding: 8px 12px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--text3);
+  font-weight: 600;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.port-table tbody td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.port-table tbody tr:last-child td { border-bottom: none; }
+.port-table tbody tr:hover td { background: var(--bg); }
+
+.port-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  color: var(--blue);
+}
+
+.proto-tag {
+  display: inline-block;
+  padding: 1px 6px;
+  background: var(--border);
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text3);
+  margin-left: 4px;
+}
+
+.svc-name { color: var(--teal); font-weight: 600; }
+.ver-info { color: var(--text3); font-size: 12px; }
+
+.state-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid;
+}
+
+.state-open     { background: var(--green-light); color: var(--green); border-color: #86efac; }
+.state-closed   { background: var(--red-light); color: var(--red); border-color: #fca5a5; }
+.state-filtered { background: #fffbeb; color: var(--yellow); border-color: #fde68a; }
+.state-open-filtered { background: #fff7ed; color: var(--orange); border-color: #fdba74; }
+.state-unfiltered { background: var(--border); color: var(--text2); border-color: var(--border2); }
+
+/* Script expand */
+.script-toggle {
+  background: none; border: none;
+  font-size: 11px; color: var(--purple);
+  cursor: pointer; text-decoration: underline;
+  font-family: inherit; padding: 0;
+}
+
+.script-box {
+  display: none;
+  margin-top: 6px;
+  padding: 8px 10px;
+  background: #0f172a;
+  border-radius: var(--radius-sm);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #94a3b8;
+  white-space: pre-wrap;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+/* OS + host scripts */
+.info-block {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border-left: 3px solid;
+  font-size: 12px;
+}
+
+.info-os     { background: var(--purple-light); border-color: var(--purple); }
+.info-script { background: #fff7ed; border-color: var(--orange); }
+
+.info-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--text3);
+  margin-bottom: 5px;
+}
+
+/* ── TERMINAL ─────────────────────────────────── */
+.terminal {
+  background: #0f172a;
+  border-radius: var(--radius);
+  padding: 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: #94a3b8;
+  min-height: 400px;
+  max-height: 600px;
+  overflow-y: auto;
+  line-height: 1.8;
+}
+
+.terminal::-webkit-scrollbar { width: 4px; }
+.terminal::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
+
+.t-info    { color: #7dd3fc; }
+.t-success { color: #4ade80; }
+.t-warn    { color: #fbbf24; }
+.t-error   { color: #f87171; }
+.t-dim     { color: #475569; }
+
+/* ── FILTER BAR ───────────────────────────────── */
+.filter-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.filter-input {
+  flex: 1;
+  min-width: 160px;
+  padding: 7px 12px 7px 32px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+  background: var(--white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E") 10px center no-repeat;
+}
+
+.filter-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
+
+.filter-chip {
+  padding: 6px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+  color: var(--text2);
+  background: var(--white);
+}
+
+.filter-chip:hover { border-color: var(--blue); color: var(--blue); }
+.filter-chip.active { background: var(--blue); border-color: var(--blue); color: white; }
+
+/* ── EXPORT ───────────────────────────────────── */
+.export-btns {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.btn-export {
+  padding: 8px 16px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--white);
+  color: var(--text2);
+  transition: all .15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-export:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-light); }
+
+.raw-box {
+  background: #0f172a;
+  border-radius: var(--radius);
+  padding: 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #94a3b8;
+  max-height: 500px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  line-height: 1.7;
+}
+
+/* ── CHEATSHEET ───────────────────────────────── */
+.cheat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.cheat-section {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.cheat-section-head {
+  padding: 10px 14px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.cheat-row {
+  display: flex;
+  gap: 10px;
+  padding: 7px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+
+.cheat-row:last-child { border-bottom: none; }
+
+.cheat-cmd {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--blue);
+  font-size: 12px;
+  white-space: nowrap;
+  min-width: 130px;
+}
+
+.cheat-desc { color: var(--text2); }
+
+/* ── HISTORY ──────────────────────────────────── */
+.history-item {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all .15s;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.history-item:hover { border-color: var(--blue); box-shadow: var(--shadow); }
+
+.history-num {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--blue-light);
+  color: var(--blue);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.history-info { flex: 1; min-width: 0; }
+.history-target { font-weight: 700; font-size: 13px; font-family: 'JetBrains Mono', monospace; }
+.history-cmd { font-size: 11px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'JetBrains Mono', monospace; margin-top: 2px; }
+.history-meta { font-size: 11px; color: var(--text3); margin-top: 3px; }
+
+/* ── SECTION DIVIDER ──────────────────────────── */
+.sec-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  color: var(--text2);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.sec-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── HELPER ───────────────────────────────────── */
+.hidden { display: none !important; }
+.flex-gap { display: flex; gap: 8px; }
+
+/* ── RESPONSIVE ───────────────────────────────── */
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { max-height: 70vh; }
+  .cheat-grid { grid-template-columns: 1fr; }
+  .summary-strip { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <a class="header-logo" href="#">
+    <div class="icon">🛰️</div>
+    <span>Nmap Scanner</span>
+  </a>
+  <div class="header-sep"></div>
+  <div class="header-badge">
+    <span class="dot-green"></span>
+    Sẵn sàng
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- ═══════════════ SIDEBAR ═══════════════ -->
+  <aside class="sidebar">
+
+    <!-- Preset nhanh -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-head-icon" style="background:#eff6ff">⚡</div>
+        <span class="card-head-title">Quét nhanh — Chọn cấu hình sẵn</span>
+      </div>
+      <div class="preset-grid">
+        <div class="preset-item preset-quick active" onclick="setPreset('quick',this)">
+          <div class="preset-icon">⚡</div>
+          <div class="preset-name">Quét nhanh</div>
+          <div class="preset-desc">1000 cổng phổ biến nhất</div>
+          <div class="preset-cmd">nmap -F [target]</div>
+        </div>
+        <div class="preset-item preset-full" onclick="setPreset('full',this)">
+          <div class="preset-icon">🔍</div>
+          <div class="preset-name">Quét toàn diện</div>
+          <div class="preset-desc">OS, dịch vụ, script mặc định</div>
+          <div class="preset-cmd">nmap -A [target]</div>
+        </div>
+        <div class="preset-item preset-vuln" onclick="setPreset('vuln',this)">
+          <div class="preset-icon">🛡️</div>
+          <div class="preset-name">Quét lỗ hổng</div>
+          <div class="preset-desc">Script phát hiện CVE</div>
+          <div class="preset-cmd">nmap --script vuln</div>
+        </div>
+        <div class="preset-item preset-all" onclick="setPreset('allports',this)">
+          <div class="preset-icon">🌐</div>
+          <div class="preset-name">Tất cả cổng</div>
+          <div class="preset-desc">Toàn bộ 65535 cổng TCP</div>
+          <div class="preset-cmd">nmap -p- [target]</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Địa chỉ mục tiêu -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-head-icon" style="background:#f0fdf4">🎯</div>
+        <span class="card-head-title">Địa chỉ IP cần quét</span>
+      </div>
+      <div class="card-body">
+        <div class="form-row">
+          <label class="field-label">Mục tiêu</label>
+          <div class="input-wrap">
+            <span class="input-icon">🌐</span>
+            <input type="text" id="target" class="has-icon"
+              placeholder="192.168.1.1  |  192.168.1.0/24  |  scanme.nmap.org"
+              oninput="updatePreview()">
+          </div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px;">
+            Nhập mục tiêu: IP đơn, dải CIDR, hostname hoặc dải IP
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loại quét -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-head-icon" style="background:#f5f3ff">🔧</div>
+        <span class="card-head-title">Kỹ thuật quét</span>
+      </div>
+      <div class="card-body">
+        <div class="form-row">
+          <label class="field-label">Loại quét</label>
+          <select id="scan_type" onchange="updatePreview()">
+            <optgroup label="── Cơ bản ──">
+              <option value="common">Quét cổng phổ biến (mặc định)</option>
+              <option value="full">Quét toàn diện (-A)</option>
+              <option value="vuln">Quét lỗ hổng (--script vuln)</option>
+              <option value="allports">Tất cả 65535 cổng (-p-)</option>
+              <option value="ping">Chỉ phát hiện host (-sn)</option>
+            </optgroup>
+            <optgroup label="── TCP ──">
+              <option value="syn">SYN Scan - Tàng hình (-sS)</option>
+              <option value="connect">Connect Scan (-sT)</option>
+              <option value="ack">ACK Scan - Kiểm tra firewall (-sA)</option>
+              <option value="window">Window Scan (-sW)</option>
+              <option value="fin">FIN Scan - Tàng hình (-sF)</option>
+              <option value="null">NULL Scan - Tàng hình (-sN)</option>
+              <option value="xmas">Xmas Scan - Tàng hình (-sX)</option>
+              <option value="maimon">Maimon Scan (-sM)</option>
+            </optgroup>
+            <optgroup label="── Khác ──">
+              <option value="udp">UDP Scan (-sU)</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <label class="field-label">Phát hiện host (Host Discovery)</label>
+          <select id="host_discovery" onchange="updatePreview()">
+            <option value="">Mặc định</option>
+            <option value="no_ping">-Pn · Bỏ qua ping (luôn coi là online)</option>
+            <option value="syn_ping">-PS · TCP SYN Ping</option>
+            <option value="ack_ping">-PA · TCP ACK Ping</option>
+            <option value="udp_ping">-PU · UDP Ping</option>
+            <option value="icmp">-PE · ICMP Echo</option>
+            <option value="arp">-PR · ARP (chỉ mạng LAN)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cổng & Script -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-head-icon" style="background:#fff7ed">📡</div>
+        <span class="card-head-title">Cổng & NSE Script</span>
+      </div>
+      <div class="card-body">
+        <div class="form-row">
+          <label class="field-label">Cổng tùy chỉnh (để trống = mặc định)</label>
+          <input type="text" id="ports"
+            placeholder="80,443  |  1-1024  |  U:53,T:80,443"
+            oninput="updatePreview()">
+        </div>
+        <div class="form-row">
+          <label class="field-label">NSE Script</label>
+          <select id="nse_preset" onchange="applyNsePreset()">
+            <option value="">Không dùng script</option>
+            <option value="default">default · Script cơ bản (-sC)</option>
+            <option value="safe">safe · Script an toàn</option>
+            <option value="discovery">discovery · Thu thập thông tin</option>
+            <option value="vuln">vuln · Phát hiện lỗ hổng CVE</option>
+            <option value="exploit">exploit · Khai thác lỗ hổng</option>
+            <option value="brute">brute · Brute-force mật khẩu</option>
+            <option value="auth">auth · Kiểm tra xác thực</option>
+            <option value="vulners">vulners · Tra cứu CVE (Vulners DB)</option>
+            <option value="ssl-heartbleed">ssl-heartbleed · Kiểm tra Heartbleed</option>
+            <option value="smb-vuln-ms17-010">smb-vuln-ms17-010 · EternalBlue</option>
+            <option value="custom">— Tự nhập tên script —</option>
+          </select>
+        </div>
+        <div class="form-row" id="nse-custom-wrap" style="display:none">
+          <label class="field-label">Tên script tùy chỉnh</label>
+          <input type="text" id="nse_script"
+            placeholder="ssl-heartbleed  |  smb-enum-users"
+            oninput="updatePreview()">
+        </div>
+      </div>
+    </div>
+
+    <!-- Tùy chọn bổ sung -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-head-icon" style="background:#f0fdf4">⚙️</div>
+        <span class="card-head-title">Tùy chọn bổ sung</span>
+      </div>
+      <div class="card-body">
+        <div class="check-grid">
+          <label class="check-label">
+            <input type="checkbox" id="os_detect" onchange="updatePreview()">
+            <span>Phát hiện OS (-O)</span>
+          </label>
+          <label class="check-label">
+            <input type="checkbox" id="version_detect" onchange="updatePreview()">
+            <span>Phiên bản dịch vụ (-sV)</span>
+          </label>
+          <label class="check-label">
+            <input type="checkbox" id="aggressive" onchange="updatePreview()">
+            <span>Quét mạnh (-A)</span>
+          </label>
+          <label class="check-label">
+            <input type="checkbox" id="udp_scan" onchange="updatePreview()">
+            <span>Quét UDP (-sU)</span>
+          </label>
+          <label class="check-label">
+            <input type="checkbox" id="default_script" onchange="updatePreview()">
+            <span>Script mặc định (-sC)</span>
+          </label>
+          <label class="check-label">
+            <input type="checkbox" id="no_ping" onchange="updatePreview()">
+            <span>Bỏ qua Ping (-Pn)</span>
+          </label>
+          <label class="check-label">
+            <input type="checkbox" id="traceroute" onchange="updatePreview()">
+            <span>Traceroute</span>
+          </label>
+          <label class="check-label">
+            <input type="checkbox" id="no_dns" onchange="updatePreview()">
+            <span>Không dùng DNS (-n)</span>
+          </label>
+        </div>
+        <div class="form-row" style="margin-top:10px">
+          <label class="field-label">Tham số nmap tùy chỉnh</label>
+          <input type="text" id="custom_flags"
+            placeholder="--scanflags SYN  |  --exclude 192.168.1.1"
+            oninput="updatePreview()">
+        </div>
+      </div>
+    </div>
+
+    <!-- Timing -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-head-icon" style="background:#fffbeb">⏱️</div>
+        <span class="card-head-title">Tốc độ quét</span>
+      </div>
+      <div class="card-body">
+        <div class="timing-track">
+          <button class="timing-btn" data-t="T0" onclick="setTiming('T0',this)">
+            T0<span class="timing-label">Cực chậm</span>
+          </button>
+          <button class="timing-btn" data-t="T1" onclick="setTiming('T1',this)">
+            T1<span class="timing-label">Chậm</span>
+          </button>
+          <button class="timing-btn" data-t="T2" onclick="setTiming('T2',this)">
+            T2<span class="timing-label">Lịch sự</span>
+          </button>
+          <button class="timing-btn active" data-t="T3" onclick="setTiming('T3',this)">
+            T3<span class="timing-label">Bình thường</span>
+          </button>
+          <button class="timing-btn" data-t="T4" onclick="setTiming('T4',this)">
+            T4<span class="timing-label">Nhanh</span>
+          </button>
+          <button class="timing-btn" data-t="T5" onclick="setTiming('T5',this)">
+            T5<span class="timing-label">Cực nhanh</span>
+          </button>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:8px;line-height:1.5;">
+          T0–T2: ẩn, tránh IDS/IPS &nbsp;|&nbsp; T3: mặc định &nbsp;|&nbsp; T4–T5: nhanh (mạng LAN)
+        </div>
+      </div>
+    </div>
+
+    <!-- Lệnh tương đương -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-head-icon" style="background:#f8fafc">💻</div>
+        <span class="card-head-title">Lệnh Nmap tương đương</span>
+      </div>
+      <div class="card-body">
+        <div class="cmd-box">
+          <span class="prompt">$ </span><span id="cmd-preview">nmap -T3 &lt;target&gt;</span>
+        </div>
+        <div style="margin-top:8px;display:flex;gap:6px;">
+          <button class="btn-reset" style="flex:1" onclick="copyCmd()">📋 Sao chép lệnh</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nút quét -->
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <button class="btn-scan" id="btn-scan" onclick="startScan()">
+        🔍 Bắt đầu quét
+      </button>
+      <button class="btn-stop" id="btn-stop" onclick="stopScan()">
+        ⏹ Dừng quét
+      </button>
+      <button class="btn-reset" onclick="resetAll()">↺ Đặt lại</button>
+    </div>
+
+  </aside>
+
+  <!-- ═══════════════ MAIN PANEL ═══════════════ -->
+  <main class="main-panel">
+
+    <!-- Status bar -->
+    <div class="status-bar">
+      <div class="stat-item">
+        <span>Trạng thái:</span>
+        <strong id="s-status">Chờ</strong>
+      </div>
+      <div class="stat-item">
+        <span>Mục tiêu:</span>
+        <strong id="s-target" style="font-family:'JetBrains Mono',monospace">—</strong>
+      </div>
+      <div class="stat-sep"></div>
+      <div class="stat-item">
+        <span>Host lên:</span>
+        <strong id="s-hosts" style="color:var(--green)">—</strong>
+      </div>
+      <div class="stat-item">
+        <span>Cổng mở:</span>
+        <strong id="s-ports" style="color:var(--blue)">—</strong>
+      </div>
+      <div class="stat-item">
+        <span>Thời gian:</span>
+        <strong id="s-time">—</strong>
+      </div>
+      <div class="progress-wrap" id="progress-wrap">
+        <span style="font-size:12px;color:var(--text3)">Đang quét...</span>
+        <div class="progress-bar">
+          <div class="progress-fill ani" id="progress-fill"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Output tabs -->
+    <div class="output-tabs">
+      <div class="out-tab active" onclick="switchTab('results',this)">📊 Kết quả</div>
+      <div class="out-tab" onclick="switchTab('terminal',this)">💻 Terminal</div>
+      <div class="out-tab" onclick="switchTab('cheatsheet',this)">📖 Tham khảo</div>
+      <div class="out-tab" onclick="switchTab('history',this)">📋 Lịch sử</div>
+      <div class="out-tab" onclick="switchTab('export',this)">📥 Xuất file</div>
+    </div>
+
+    <!-- Content -->
+    <div class="content-area">
+
+      <!-- ── RESULTS ── -->
+      <div id="view-results" class="view active">
+        <div id="results-empty" class="empty-state">
+          <div class="empty-icon">🛰️</div>
+          <div class="empty-title">Chưa có kết quả</div>
+          <div class="empty-sub">Nhập mục tiêu ở bên trái và nhấn <strong>Bắt đầu quét</strong></div>
+        </div>
+        <div id="results-content" style="display:none">
+          <div id="summary-strip" class="summary-strip"></div>
+          <div class="filter-bar" id="filter-bar">
+            <input type="text" class="filter-input" id="filter-q"
+              placeholder="Tìm theo IP, cổng, dịch vụ..." oninput="filterHosts()">
+            <div class="filter-chip active" onclick="setChip('all',this)">Tất cả</div>
+            <div class="filter-chip" onclick="setChip('open',this)">Có cổng mở</div>
+            <div class="filter-chip" onclick="setChip('up',this)">Host online</div>
+          </div>
+          <div id="host-list"></div>
+        </div>
+      </div>
+
+      <!-- ── TERMINAL ── -->
+      <div id="view-terminal" class="view">
+        <div class="terminal" id="terminal">
+          <div class="t-info">┌─ Nmap Scanner Terminal ─────────────────</div>
+          <div class="t-info">│ Sẵn sàng. Cấu hình quét và nhấn "Bắt đầu quét"</div>
+          <div class="t-info">└──────────────────────────────────────────</div>
+        </div>
+      </div>
+
+      <!-- ── CHEATSHEET ── -->
+      <div id="view-cheatsheet" class="view">
+        <div class="cheat-grid">
+
+          <div class="cheat-section">
+            <div class="cheat-section-head">🔍 Phát hiện Host</div>
+            <div class="cheat-row"><span class="cheat-cmd">-sn</span><span class="cheat-desc">Ping scan, không quét cổng</span></div>
+            <div class="cheat-row"><span class="cheat-cmd">-Pn</span><span class="cheat-desc">Bỏ qua ping, coi tất cả là online</span></div>
+            <div class="cheat-row"><span class="cheat-cmd">-PS[port]</span><span class="cheat-desc">TCP SYN ping</span></div>
+            <div class="cheat-row"><span class="cheat-cmd">-PA[port]</span><span class="cheat-desc">TCP ACK ping (bypass firewall)</span></div>
+            <div class="cheat-row"><span class="cheat-cmd">-PU[port]</span><span class="cheat-desc">UDP ping</span></div>
+            <div class="cheat-row"><span class="cheat-cmd">-PE</span><span class="cheat-desc">ICMP Echo Request</span></div>
+            <div class="cheat-row"><span class="cheat-cmd">-PR</span><span class="cheat-desc">ARP scan (LAN, nhanh nhất)</span></div>
+            <div class="cheat-row"><span class="cheat-cmd">-n</span><span class="cheat-desc">Không dùng DNS resolution</span></div>
+          </div>
+
+          <div class="cheat-section">
+            <div class="cheat-section-head">🔧 Kỹ thuật quét cổng</div>
+            <div class="cheat-row"><span class="cheat-cmd">-sS</span><span class="cheat-desc">TCP SYN (tàng hình, cần root)</span></div>
+            <div class="cheat-row"><span class="cheat-cmd">-sT</span><span class="cheat-desc">TCP Connect (không cần root)</span></div>
+            <div class="cheat-row"><span class="cheat-cmd">-sU</span><span class="cheat-desc">UDP scan</span></div>
+            <div class="cheat-row"><span class="cheat-cmd">-sA</span><span class="cheat-desc">ACK scan – lập bản đồ firewall</span></div>
+            <div class="cheat-row"><span class="cheat-cmd">-sW</span><span class="cheat-desc">Window scan</span></div>
+            <div class="cheat-row"><span class="cheat-cmd">-sF / -sN / -sX</span><span class="cheat-desc">FIN / NULL / Xmas – tàng hình</span></div>
+            <div class="cheat-row"><span class="cheat-cmd">-sM</span><span class="cheat-desc">Maimon scan (BSD)</span></div>
+            <div class="cheat-row"><span class="cheat-cmd">--scanflags</span><span class="cheat-desc">Tùy chỉnh TCP flags</span></div>
+          </div>
+
+          <div class="cheat-section">
+            <div class="cheat-section-head">📡 Lựa chọn cổng</div>
+            <div class="cheat-row"><span class="cheat-cmd">-p 22,80,443</span><span class="cheat-desc">Cổng cụ thể</span></div>
+            <div class="cheat-row"><span class="cheat-cmd">-p 1-1024</span><span class="cheat-desc">Dải cổng</span></div>
+            <div class="cheat-row"><span class="cheat-cmd">-p-</span><span class="cheat-desc">Tất cả 65535 cổng</span></div>
+            <div class="cheat-row"><span class="cheat-cmd">-F</span><span class="cheat-desc">Nhanh – 100 cổng phổ biến</span></div>
+            <div class="cheat-row"><span class="cheat-cmd">--top-ports 50</span><span class="cheat-desc">Top N cổng phổ biến nhất</span></div>
+            <div class="cheat-row"><span class="cheat-cmd">-p U:53,T:80</span><span class="cheat-desc">Chỉ định giao thức cho cổng</span></div>
+          </div>
+
+          <div class="cheat-section">
+            <div class="cheat-section-head">🛡️ Phát hiện & Fingerprint</div>
+            <div class="cheat-row"><span class="cheat-cmd">-sV</span><span class="cheat-desc">Phiên bản dịch vụ</span></div>
+            <div class="cheat-row"><span class="cheat-cmd">-O</span><span class="cheat-desc">Nhận diện hệ điều hành</span></div>
+            <div class="cheat-row"><span class="cheat-cmd">-A</span><span class="cheat-desc">Toàn diện: -O -sV -sC --traceroute</span></div>
+            <div class="cheat-row"><span class="cheat-cmd">--traceroute</span><span class="cheat-desc">Theo dõi lộ trình mạng</span></div>
+          </div>
+
+          <div class="cheat-section">
+            <div class="cheat-section-head">📜 NSE Scripts</div>
+            <div class="cheat-row"><span class="cheat-cmd">-sC</span><span class="cheat-desc">Script mặc định (default)</span></div>
+            <div class="cheat-row"><span class="cheat-cmd">--script vuln</span><span class="cheat-desc">Quét lỗ hổng CVE</span></div>
+            <div class="cheat-row"><span class="cheat-cmd">--script safe</span><span class="cheat-desc">Script an toàn</span></div>
+            <div class="cheat-row"><span class="cheat-cmd">--script brute</span><span class="cheat-desc">Brute-force tài khoản</span></div>
+            <div class="cheat-row"><span class="cheat-cmd">--script auth</span><span class="cheat-desc">Kiểm tra xác thực</span></div>
+            <div class="cheat-row"><span class="cheat-cmd">--script vulners</span><span class="cheat-desc">Tra cứu CVE qua Vulners.com</span></div>
+            <div class="cheat-row"><span class="cheat-cmd">--script ssl-heartbleed</span><span class="cheat-desc">Kiểm tra lỗ hổng Heartbleed</span></div>
+            <div class="cheat-row"><span class="cheat-cmd">--script smb-vuln-ms17-010</span><span class="cheat-desc">Kiểm tra EternalBlue</span></div>
+          </div>
+
+          <div class="cheat-section">
+            <div class="cheat-section-head">⏱️ Timing & Hiệu suất</div>
+            <div class="cheat-row"><span class="cheat-cmd">-T0 Paranoid</span><span class="cheat-desc">Cực chậm – né IDS/IPS tốt nhất</span></div>
+            <div class="cheat-row"><span class="cheat-cmd">-T1 Sneaky</span><span class="cheat-desc">Chậm – tránh bị phát hiện</span></div>
+            <div class="cheat-row"><span class="cheat-cmd">-T2 Polite</span><span class="cheat-desc">Lịch sự – không làm quá tải</span></div>
+            <div class="cheat-row"><span class="cheat-cmd">-T3 Normal</span><span class="cheat-desc">Mặc định – cân bằng</span></div>
+            <div class="cheat-row"><span class="cheat-cmd">-T4 Aggressive</span><span class="cheat-desc">Nhanh – dùng cho LAN</span></div>
+            <div class="cheat-row"><span class="cheat-cmd">-T5 Insane</span><span class="cheat-desc">Cực nhanh – dễ bị phát hiện</span></div>
+          </div>
+
+          <div class="cheat-section">
+            <div class="cheat-section-head">📊 Trạng thái cổng</div>
+            <div class="cheat-row"><span class="cheat-cmd" style="color:var(--green)">open</span><span class="cheat-desc">Mở – dịch vụ đang lắng nghe</span></div>
+            <div class="cheat-row"><span class="cheat-cmd" style="color:var(--red)">closed</span><span class="cheat-desc">Đóng – host up nhưng không có dịch vụ</span></div>
+            <div class="cheat-row"><span class="cheat-cmd" style="color:var(--yellow)">filtered</span><span class="cheat-desc">Bị lọc bởi firewall</span></div>
+            <div class="cheat-row"><span class="cheat-cmd" style="color:var(--text2)">unfiltered</span><span class="cheat-desc">Có thể truy cập, chưa xác định</span></div>
+            <div class="cheat-row"><span class="cheat-cmd" style="color:var(--orange)">open|filtered</span><span class="cheat-desc">Không phân biệt được mở hay lọc</span></div>
+          </div>
+
+          <div class="cheat-section">
+            <div class="cheat-section-head">💾 Xuất kết quả</div>
+            <div class="cheat-row"><span class="cheat-cmd">-oN file</span><span class="cheat-desc">Văn bản thông thường</span></div>
+            <div class="cheat-row"><span class="cheat-cmd">-oX file</span><span class="cheat-desc">XML (cho Metasploit)</span></div>
+            <div class="cheat-row"><span class="cheat-cmd">-oG file</span><span class="cheat-desc">Grepable (dùng với grep/awk)</span></div>
+            <div class="cheat-row"><span class="cheat-cmd">-oA file</span><span class="cheat-desc">Tất cả các định dạng</span></div>
+            <div class="cheat-row"><span class="cheat-cmd">-v / -vv</span><span class="cheat-desc">Verbose – chi tiết hơn</span></div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── HISTORY ── -->
+      <div id="view-history" class="view">
+        <div id="history-empty" class="empty-state">
+          <div class="empty-icon">📋</div>
+          <div class="empty-title">Chưa có lịch sử</div>
+          <div class="empty-sub">Các lần quét sẽ được lưu lại ở đây</div>
+        </div>
+        <div id="history-list"></div>
+      </div>
+
+      <!-- ── EXPORT ── -->
+      <div id="view-export" class="view">
+        <div style="margin-bottom:16px;">
+          <div class="sec-divider">📥 Xuất kết quả</div>
+          <div class="export-btns">
+            <button class="btn-export" onclick="doExport('json')">📄 JSON</button>
+            <button class="btn-export" onclick="doExport('csv')">📊 CSV</button>
+            <button class="btn-export" onclick="doExport('text')">📝 Văn bản</button>
+            <button class="btn-export" onclick="copyCmd()">📋 Sao chép lệnh</button>
+          </div>
+        </div>
+        <div class="sec-divider">💻 Raw Output</div>
+        <div class="raw-box" id="raw-box">Chưa có dữ liệu.</div>
+      </div>
+
+    </div><!-- /content-area -->
+  </main>
+</div>
+
+<script>
+// ── STATE ─────────────────────────────────────────────────────────────────
+let timing = 'T3';
+let scanData = null;
+let history  = [];
+let chipFilter = 'all';
+let lastCmd = '';
+
+// ── PRESET ───────────────────────────────────────────────────────────────
+const presetMap = {
+  quick:    { scan_type:'common',  fast_scan:true },
+  full:     { scan_type:'full' },
+  vuln:     { scan_type:'vuln' },
+  allports: { scan_type:'allports' },
+};
+
+function setPreset(key, el) {
+  document.querySelectorAll('.preset-item').forEach(e => e.classList.remove('active'));
+  el.classList.add('active');
+  const cfg = presetMap[key] || {};
+  if (cfg.scan_type) document.getElementById('scan_type').value = cfg.scan_type;
+  updatePreview();
+}
+
+// ── TIMING ────────────────────────────────────────────────────────────────
+function setTiming(t, el) {
+  timing = t;
+  document.querySelectorAll('.timing-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  updatePreview();
+}
+
+// ── NSE PRESET ───────────────────────────────────────────────────────────
+function applyNsePreset() {
+  const v = document.getElementById('nse_preset').value;
+  const wrap = document.getElementById('nse-custom-wrap');
+  if (v === 'custom') {
+    wrap.style.display = 'block';
+  } else {
+    wrap.style.display = 'none';
+    document.getElementById('nse_script').value = v;
+  }
+  updatePreview();
+}
+
+// ── BUILD FORM DATA ───────────────────────────────────────────────────────
+function getFormData() {
+  return {
+    target:          document.getElementById('target').value.trim(),
+    scan_type:       document.getElementById('scan_type').value,
+    host_discovery:  document.getElementById('host_discovery').value,
+    ports:           document.getElementById('ports').value.trim(),
+    nse_script:      document.getElementById('nse_script').value.trim(),
+    os_detect:       document.getElementById('os_detect').checked,
+    version_detect:  document.getElementById('version_detect').checked,
+    aggressive:      document.getElementById('aggressive').checked,
+    udp_scan:        document.getElementById('udp_scan').checked,
+    default_script:  document.getElementById('default_script').checked,
+    no_ping:         document.getElementById('no_ping').checked,
+    traceroute:      document.getElementById('traceroute').checked,
+    no_dns:          document.getElementById('no_dns').checked,
+    custom_flags:    document.getElementById('custom_flags').value.trim(),
+    timing:          timing,
+  };
+}
+
+// ── COMMAND PREVIEW ───────────────────────────────────────────────────────
+async function updatePreview() {
+  const data = getFormData();
+  try {
+    const r = await fetch('/preview', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(data)
+    });
+    const j = await r.json();
+    const cmd = j.command || j.error || 'nmap ...';
+    document.getElementById('cmd-preview').textContent = cmd;
+    lastCmd = cmd;
+  } catch(e) {
+    document.getElementById('cmd-preview').textContent = 'nmap ...';
+  }
+}
+
+document.getElementById('target').addEventListener('input', updatePreview);
+
+// ── SCAN ──────────────────────────────────────────────────────────────────
+function startScan() {
+  const data = getFormData();
+  if (!data.target) {
+    alert('Vui lòng nhập địa chỉ IP hoặc hostname cần quét!');
+    document.getElementById('target').focus();
+    return;
+  }
+
+  clearResults();
+  setRunning(true, data.target);
+
+  termLine('─'.repeat(50), 't-info');
+  termLine('▶  Lệnh: ' + lastCmd, 't-info');
+  termLine('─'.repeat(50), 't-info');
+
+  fetch('/scan', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(data)
+  }).then(async res => {
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+    while(true) {
+      const {done, value} = await reader.read();
+      if(done) break;
+      buf += dec.decode(value, {stream:true});
+      const parts = buf.split('\n\n');
+      buf = parts.pop();
+      for(const part of parts) {
+        if(part.startsWith('data:')) {
+          handleEvent(JSON.parse(part.slice(5)));
+        }
+      }
+    }
+  }).catch(e => {
+    termLine('Lỗi kết nối: ' + e.message, 't-error');
+    setRunning(false);
+  });
+}
+
+function handleEvent(ev) {
+  if(ev.type === 'log') {
+    termLine(ev.line);
+  } else if(ev.type === 'result') {
+    scanData = ev.data;
+    termLine('', '');
+    termLine('✅  Quét hoàn tất!', 't-success');
+    termLine('─'.repeat(50), 't-info');
+    document.getElementById('raw-box').textContent = ev.raw || '';
+    renderResults(ev.data);
+    setRunning(false);
+    // history
+    const hostsUp   = ev.data.hosts.filter(h => h.status==='up').length;
+    const openPorts = ev.data.hosts.reduce((a,h)=>a+h.ports.filter(p=>p.state==='open').length, 0);
+    history.unshift({ target: document.getElementById('target').value, cmd: ev.cmd,
+                      time: new Date().toLocaleTimeString('vi-VN'),
+                      hostsUp, openPorts, data: ev.data });
+    if(history.length > 30) history.pop();
+    renderHistory();
+  } else if(ev.type === 'done') {
+    setRunning(false);
+  } else if(ev.type === 'error') {
+    termLine('⚠️  Lỗi: ' + ev.msg, 't-error');
+    setRunning(false);
+  }
+}
+
+// ── RENDER RESULTS ────────────────────────────────────────────────────────
+function renderResults(data) {
+  const hostsUp   = data.hosts.filter(h => h.status==='up').length;
+  const openPorts = data.hosts.reduce((a,h)=>a+h.ports.filter(p=>p.state==='open').length,0);
+  const filtPorts = data.hosts.reduce((a,h)=>a+h.ports.filter(p=>p.state==='filtered').length,0);
+
+  document.getElementById('s-hosts').textContent = hostsUp;
+  document.getElementById('s-ports').textContent = openPorts;
+  if(data.elapsed) document.getElementById('s-time').textContent = data.elapsed + 's';
+
+  document.getElementById('summary-strip').innerHTML = `
+    <div class="sum-card sum-blue">
+      <span class="sum-val">${data.hosts.length}</span>
+      <span class="sum-lbl">Host đã quét</span>
+    </div>
+    <div class="sum-card sum-green">
+      <span class="sum-val">${hostsUp}</span>
+      <span class="sum-lbl">Host online</span>
+    </div>
+    <div class="sum-card sum-red">
+      <span class="sum-val">${openPorts}</span>
+      <span class="sum-lbl">Cổng mở</span>
+    </div>
+    <div class="sum-card sum-purple">
+      <span class="sum-val">${filtPorts}</span>
+      <span class="sum-lbl">Cổng bị lọc</span>
+    </div>
+  `;
+
+  document.getElementById('results-empty').style.display = 'none';
+  document.getElementById('results-content').style.display = 'block';
+  renderHostList(data.hosts);
+}
+
+function renderHostList(hosts) {
+  const q    = (document.getElementById('filter-q').value||'').toLowerCase();
+  const chip = chipFilter;
+  const cont = document.getElementById('host-list');
+  cont.innerHTML = '';
+
+  const filtered = hosts.filter(h => {
+    if(chip==='up'   && h.status!=='up') return false;
+    if(chip==='open' && h.ports.filter(p=>p.state==='open').length===0) return false;
+    if(q) {
+      const blob = [h.ip, ...h.hostnames, ...h.ports.map(p=>`${p.port} ${p.service} ${p.product} ${p.version}`)].join(' ').toLowerCase();
+      if(!blob.includes(q)) return false;
+    }
+    return true;
+  });
+
+  if(filtered.length===0) {
+    cont.innerHTML = '<div class="empty-state"><div class="empty-icon">🔎</div><div class="empty-title">Không có kết quả phù hợp</div></div>';
+    return;
+  }
+
+  filtered.forEach((h,idx) => {
+    const openP = h.ports.filter(p=>p.state==='open').length;
+    const filtP = h.ports.filter(p=>p.state==='filtered').length;
+    const hostname = h.hostnames[0] || '';
+    const osName = h.os[0]?.name || '';
+
+    const card = document.createElement('div');
+    card.className = 'host-card';
+    card.innerHTML = `
+      <div class="host-header" onclick="toggleHost(${idx})">
+        <div class="host-avatar">💻</div>
+        <div class="host-info">
+          <div class="host-ip">${h.ip || 'N/A'}</div>
+          <div class="host-sub">
+            ${hostname ? hostname + ' · ' : ''}
+            ${h.mac ? h.mac + (h.vendor?' ('+h.vendor+')':'') : ''}
+          </div>
+        </div>
+        <div class="host-badges">
+          <span class="badge badge-${h.status}">${h.status==='up'?'🟢 Online':'🔴 Offline'}</span>
+          ${openP>0 ? `<span class="badge badge-open">🔓 ${openP} cổng mở</span>` : ''}
+          ${filtP>0 ? `<span class="badge badge-filt">🔒 ${filtP} bị lọc</span>` : ''}
+          ${osName ? `<span class="badge badge-os">💻 ${osName.substring(0,25)}${osName.length>25?'…':''}</span>` : ''}
+        </div>
+        <span class="collapse-arrow open" id="arrow-${idx}">▼</span>
+      </div>
+      <div id="hbody-${idx}">
+        <div class="host-body">
+          ${renderPortTable(h.ports)}
+          ${renderOSBlock(h.os)}
+          ${renderScriptBlocks(h.scripts)}
+        </div>
+      </div>
+    `;
+    cont.appendChild(card);
+  });
+}
+
+function renderPortTable(ports) {
+  if(!ports.length) return '<div style="color:var(--text3);font-size:13px;padding:8px 0;">Không có cổng nào được quét</div>';
+  let rows = ports.map((p,i) => {
+    const sc = p.scripts.length;
+    const stateClass = p.state.replace('|','-').replace('|','-');
+    const stateLabel = {'open':'🟢 open','closed':'🔴 closed','filtered':'🟡 filtered','open-filtered':'🟠 open|filtered','unfiltered':'⚪ unfiltered'}[stateClass] || p.state;
+    const ver = [p.product, p.version, p.extrainfo].filter(Boolean).join(' ');
+    return `<tr>
+      <td><span class="port-num">${p.port}</span><span class="proto-tag">${p.proto}</span></td>
+      <td><span class="state-chip state-${stateClass}">${stateLabel}</span></td>
+      <td><span class="svc-name">${p.service||'—'}</span></td>
+      <td><span class="ver-info">${ver||'—'}</span></td>
+      <td>${sc>0?`<button class="script-toggle" onclick="toggleScript('sc-${i}-${p.port}')">📜 ${sc} script</button><pre class="script-box" id="sc-${i}-${p.port}">${p.scripts.map(s=>'['+s.id+']\n'+s.output).join('\n\n')}</pre>`:'—'}</td>
+    </tr>`;
+  }).join('');
+  return `<div style="overflow-x:auto"><table class="port-table">
+    <thead><tr><th>Cổng</th><th>Trạng thái</th><th>Dịch vụ</th><th>Phiên bản</th><th>Scripts</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
+}
+
+function renderOSBlock(os) {
+  if(!os.length) return '';
+  return `<div class="info-block info-os">
+    <div class="info-title">💻 Nhận diện Hệ điều hành</div>
+    ${os.slice(0,3).map(o=>`<div style="font-weight:600;color:var(--purple)">${o.name}</div><div style="font-size:12px;color:var(--text3)">Độ chính xác: ${o.accuracy}%</div>`).join('')}
+  </div>`;
+}
+
+function renderScriptBlocks(scripts) {
+  if(!scripts.length) return '';
+  return `<div class="info-block info-script">
+    <div class="info-title">📜 Script Results</div>
+    ${scripts.map(s=>`<div style="font-weight:600;color:var(--orange);margin-bottom:4px">${s.id}</div>
+    <pre style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text2);white-space:pre-wrap;margin-bottom:8px">${s.output}</pre>`).join('')}
+  </div>`;
+}
+
+// ── TOGGLE HOST ───────────────────────────────────────────────────────────
+function toggleHost(idx) {
+  const body  = document.getElementById('hbody-'+idx);
+  const arrow = document.getElementById('arrow-'+idx);
+  const hdr   = arrow.closest('.host-header');
+  const vis   = body.style.display !== 'none';
+  body.style.display = vis ? 'none' : '';
+  if(vis) { arrow.classList.remove('open'); hdr.classList.remove('open'); }
+  else    { arrow.classList.add('open');    hdr.classList.add('open');    }
+}
+
+function toggleScript(id) {
+  const el = document.getElementById(id);
+  el.style.display = el.style.display==='block' ? 'none' : 'block';
+}
+
+// ── FILTER ────────────────────────────────────────────────────────────────
+function setChip(c, el) {
+  chipFilter = c;
+  document.querySelectorAll('.filter-chip').forEach(x => x.classList.remove('active'));
+  el.classList.add('active');
+  if(scanData) renderHostList(scanData.hosts);
+}
+
+function filterHosts() {
+  if(scanData) renderHostList(scanData.hosts);
+}
+
+// ── HISTORY ───────────────────────────────────────────────────────────────
+function renderHistory() {
+  const wrap = document.getElementById('history-list');
+  const empty = document.getElementById('history-empty');
+  if(!history.length) { empty.style.display='flex'; wrap.innerHTML=''; return; }
+  empty.style.display = 'none';
+  wrap.innerHTML = history.map((h,i) => `
+    <div class="history-item" onclick="loadHistory(${i})">
+      <div class="history-num">${i+1}</div>
+      <div class="history-info">
+        <div class="history-target">${h.target}</div>
+        <div class="history-cmd">${h.cmd}</div>
+        <div class="history-meta">${h.time} · ${h.hostsUp} host online · ${h.openPorts} cổng mở</div>
+      </div>
+      <div style="font-size:20px">▶</div>
+    </div>
+  `).join('');
+}
+
+function loadHistory(i) {
+  const h = history[i];
+  if(!h) return;
+  scanData = h.data;
+  renderResults(h.data);
+  document.getElementById('s-target').textContent = h.target;
+  document.getElementById('s-status').textContent = 'Đã tải';
+  switchTabByName('results');
+}
+
+// ── TERMINAL ──────────────────────────────────────────────────────────────
+function termLine(text, cls='') {
+  const t = document.getElementById('terminal');
+  const d = document.createElement('div');
+  if(cls) d.className = cls;
+  d.textContent = text;
+  t.appendChild(d);
+  t.scrollTop = t.scrollHeight;
+}
+
+// ── UI STATE ──────────────────────────────────────────────────────────────
+function setRunning(running, target='') {
+  document.getElementById('btn-scan').disabled = running;
+  document.getElementById('btn-stop').style.display = running ? 'flex' : 'none';
+  document.getElementById('progress-wrap').style.display = running ? 'flex' : 'none';
+  document.getElementById('s-status').textContent = running ? '⏳ Đang quét...' : '✅ Hoàn tất';
+  if(target) document.getElementById('s-target').textContent = target;
+}
+
+function stopScan() {
+  setRunning(false);
+  termLine('⏹  Đã dừng bởi người dùng.', 't-warn');
+}
+
+function clearResults() {
+  scanData = null;
+  document.getElementById('results-empty').style.display = 'flex';
+  document.getElementById('results-content').style.display = 'none';
+  document.getElementById('host-list').innerHTML = '';
+  document.getElementById('summary-strip').innerHTML = '';
+  document.getElementById('terminal').innerHTML = '';
+  document.getElementById('raw-box').textContent = 'Đang quét...';
+  document.getElementById('s-status').textContent = 'Đang quét...';
+  document.getElementById('s-hosts').textContent = '...';
+  document.getElementById('s-ports').textContent = '...';
+  document.getElementById('s-time').textContent = '...';
+}
+
+function resetAll() {
+  document.getElementById('target').value = '';
+  document.getElementById('scan_type').value = 'common';
+  document.getElementById('host_discovery').value = '';
+  document.getElementById('ports').value = '';
+  document.getElementById('nse_preset').value = '';
+  document.getElementById('nse_script').value = '';
+  document.getElementById('custom_flags').value = '';
+  ['os_detect','version_detect','aggressive','udp_scan','default_script','no_ping','traceroute','no_dns'].forEach(id => document.getElementById(id).checked = false);
+  document.querySelectorAll('.preset-item').forEach(e => e.classList.remove('active'));
+  document.querySelector('.preset-quick').classList.add('active');
+  setTiming('T3', document.querySelector('[data-t="T3"]'));
+  updatePreview();
+}
+
+// ── TAB ───────────────────────────────────────────────────────────────────
+function switchTab(name, el) {
+  document.querySelectorAll('.out-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('view-'+name).classList.add('active');
+}
+
+function switchTabByName(name) {
+  document.querySelectorAll('.out-tab').forEach(t => {
+    if(t.textContent.toLowerCase().includes(name==='results'?'kết quả':name)) t.click();
+  });
+  // fallback
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  const v = document.getElementById('view-'+name);
+  if(v) v.classList.add('active');
+}
+
+// ── EXPORT ────────────────────────────────────────────────────────────────
+function doExport(fmt) {
+  if(!scanData) { alert('Chưa có dữ liệu để xuất'); return; }
+  let content, filename, type;
+  if(fmt==='json') {
+    content = JSON.stringify(scanData, null, 2);
+    filename = 'nmap_results.json'; type = 'application/json';
+  } else if(fmt==='csv') {
+    const rows = ['Host,Hostname,Trạng thái host,Cổng,Giao thức,Trạng thái cổng,Dịch vụ,Phiên bản'];
+    scanData.hosts.forEach(h => {
+      if(!h.ports.length) {
+        rows.push(`${h.ip},${h.hostnames[0]||''},${h.status},,,,,`);
+      } else {
+        h.ports.forEach(p => {
+          const ver = [p.product,p.version,p.extrainfo].filter(Boolean).join(' ');
+          rows.push(`${h.ip},${h.hostnames[0]||''},${h.status},${p.port},${p.proto},${p.state},${p.service},"${ver}"`);
+        });
+      }
+    });
+    content = rows.join('\n'); filename = 'nmap_results.csv'; type = 'text/csv';
+  } else {
+    content = document.getElementById('raw-box').textContent;
+    filename = 'nmap_results.txt'; type = 'text/plain';
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = filename; a.click();
+}
+
+function copyCmd() {
+  navigator.clipboard.writeText(lastCmd).then(() => {
+    const orig = event.target.textContent;
+    event.target.textContent = '✅ Đã sao chép!';
+    setTimeout(() => event.target.textContent = orig, 1800);
+  });
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+updatePreview();
+</script>
+</body>
+</html>
